@@ -3,24 +3,34 @@ import {encoded, translations} from './data.js'
 console.log("Let's rock")
 console.log(encoded, translations)
 
-function decode(encoded, translations) {
-  const excludeFields = ['groupId', 'service', 'formatSize', 'ca'];
+
+function decode(data) {
+  const decodedData = [];
+
   const uniqueIds = new Set();
 
-  return encoded.map(item => {
-      let newItem = {};
-      for (let key in item) {
-          if (excludeFields.includes(key)) {
-              newItem[key] = item[key];
-          } else if (key.endsWith('Id') && item[key] in translations) {
-              uniqueIds.add(item[key]);
-              newItem[key] = translations[item[key]];
-          } else {
-              newItem[key] = item[key];
-          }
+  data.forEach(item => {
+    const decodedItem = {};
+
+    for (const key in item) {
+      if (key.endsWith('Id')) {
+        const id = item[key];
+        const decodedValue = translations[id] || id;
+
+        decodedItem[key.slice(0, -2)] = decodedValue; // Убираем суффикс 'Id' из ключа
+        uniqueIds.add(id);
+      } else if (key === 'groupId' || key === 'service' || key === 'formatSize' || key === 'ca') {
+        decodedItem[key] = item[key];
       }
-      return newItem;
-  }), Array.from(uniqueIds);
+    }
+
+    decodedData.push(decodedItem);
+  });
+
+  return { decodedData, uniqueIds: [...uniqueIds] };
 }
 
-// console.log(decoded)
+const { decodedData, uniqueIds } = decode(encoded);
+console.log('Расшифрованные данные:', decodedData);
+console.log('Уникальные id:', uniqueIds);
+
