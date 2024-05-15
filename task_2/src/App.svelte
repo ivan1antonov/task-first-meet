@@ -1,68 +1,73 @@
 <script>
   import { onMount } from 'svelte';
-
-  let fromCurrency = 'USD';
-  let toCurrency = 'EUR';
-  let amount = 1;
-  let result = 0;
+  import svelteLogo from './assets/svelte.svg';
+  import viteLogo from '/vite.svg';
+  import Counter from './lib/Counter.svelte';
+  let amount1 = 1;
+  let amount2 = 1;
+  let currency1 = 'USD';
+  let currency2 = 'EUR';
   let rates = {};
-  let error = null;
 
-  onMount(async () => {
+  const getExchangeRates = async () => {
     try {
-      const res = await fetch('https://api.exchangerate-api.com/v4/latest/USD');
-      if (!res.ok) {
-        throw new Error('in network was problem');
-      }
-      const data = await res.json();
+      const response = await fetch(`https://api.exchangerate-api.com/v4/latest/${currency1}`);
+      const data = await response.json();
       rates = data.rates;
-    } catch (err) {
-      error = err.message;
-      console.error('Fetch error:', err);
+      convertFromFirst();
+    } catch (error) {
+      console.error('Failed to fetch exchange rates:', error);
     }
-  });
+  };
 
-  function convert() {
-    if (rates[toCurrency] && rates[fromCurrency]) {
-      result = (amount * rates[toCurrency]) / rates[fromCurrency];
-    } else {
-      result = NaN;
-    }
-  }
+  const convertFromFirst = () => {
+    amount2 = (amount1 * rates[currency2]).toFixed(2);
+  };
+
+  const convertFromSecond = () => {
+    amount1 = (amount2 / rates[currency2]).toFixed(2);
+  };
+
+  onMount(getExchangeRates);
+
+  $: currency1, getExchangeRates();
 </script>
 
 <main>
-  <h1>Sber Currency Converter</h1>
-  {#if error}
-    <p>Error: {error}</p>
-  {/if}
-  <input type="number" bind:value={amount} min="1" />
-  <select bind:value={fromCurrency}>
-    {#each Object.keys(rates) as currency}
-      <option value={currency}>{currency}</option>
-    {/each}
-  </select>
-  <select bind:value={toCurrency}>
-    {#each Object.keys(rates) as currency}
-      <option value={currency}>{currency}</option>
-    {/each}
-  </select>
-  <button on:click={convert}>Convert</button>
-  <p>{amount} {fromCurrency} = {result.toFixed(2)} {toCurrency}</p>
+  <h1>Currency Sber Converter</h1>
+  <div>
+    <input type="number" bind:value={amount1} on:input={convertFromFirst} />
+    <select bind:value={currency1} on:change={getExchangeRates}>
+      {#each Object.keys(rates) as rate}
+        <option value={rate}>{rate}</option>
+      {/each}
+    </select>
+  </div>
+  <div>
+    <input type="number" bind:value={amount2} on:input={convertFromSecond} />
+    <select bind:value={currency2}>
+      {#each Object.keys(rates) as rate}
+        <option value={rate}>{rate}</option>
+      {/each}
+    </select>
+  </div>
 </main>
 
 <style>
   main {
+    font-family: Arial, sans-serif;
     text-align: center;
-    padding: 1em;
-    max-width: 240px;
-    margin: 0 auto;
+    margin-top: 50px;
     color: #3e8936;
   }
+  div {
+    margin: 20px;
+  }
   input, select {
-    margin: 0.5em;
+    font-size: 1.2em;
+    margin: 10px;
     padding: 10px 6px;
     border-radius: 10px;
-    border: 0.2em solid #5d5f79;
+    border: 0.1em solid #5d5f79;
   }
 </style>
